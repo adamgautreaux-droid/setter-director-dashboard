@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WFS Setter Director Dashboard — V5</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  --teal: #0F6E56;
+  --teal-mid: #1D9E75;
+  --teal-light: #E1F5EE;
+  --teal-border: #9FE1CB;
+  --amber: #BA7517;
+  --amber-light: #FEF7E0;
+  --amber-border: #FAC775;
+  --red: #C5221F;
+  --red-light: #FCE8E6;
+  --red-border: #F5C6C2;
+  --green: #137333;
+  --green-light: #E6F4EA;
+  --green-border: #A8D5B5;
+  --blue: #1967D2;
+  --blue-light: #E8F0FE;
+  --bg: #F5F5F3;
+  --surface: #FFFFFF;
+  --surface2: #F8F8F6;
+  --border: #E8E6E0;
+  --border-strong: #D0CEC8;
+  --text: #1A1A18;
+  --text-muted: #6B6860;
+  --text-hint: #9A9890;
+  --chrome: #1A2332;
+  --chrome-text: #8A9BB0;
+  --font: 'DM Sans', sans-serif;
+  --mono: 'DM Mono', monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 13px; line-height: 1.5; }
+
+/* ─── CHROME ─────────────────────── */
+.chrome { background: var(--chrome); padding: 0 20px; display: flex; align-items: center; gap: 0; height: 48px; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 0 rgba(255,255,255,.06); }
+.chrome-brand { display: flex; align-items: center; gap: 10px; margin-right: 32px; }
+.chrome-logo { width: 28px; height: 28px; background: var(--teal); border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+.chrome-logo svg { width: 16px; height: 16px; fill: #fff; }
+.chrome-title { font-size: 13px; font-weight: 500; color: #E8EDF2; letter-spacing: -.01em; }
+.chrome-badge { font-size: 10px; padding: 1px 7px; border-radius: 10px; background: rgba(255,255,255,.1); color: var(--chrome-text); font-weight: 500; margin-left: 4px; }
+.nav-tabs { display: flex; gap: 0; height: 48px; }
+.nav-tab { padding: 0 16px; font-size: 12px; font-weight: 500; color: var(--chrome-text); cursor: pointer; display: flex; align-items: center; border-bottom: 2px solid transparent; transition: all .15s; white-space: nowrap; }
+.nav-tab:hover { color: #C8D4E0; }
+.nav-tab.active { color: #E8EDF2; border-bottom-color: var(--teal-mid); }
+.chrome-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.sync-badge { font-size: 10px; color: var(--chrome-text); display: flex; align-items: center; gap: 5px; }
+.sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--teal-mid); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+/* ─── FILTERS BAR ────────────────── */
+.filter-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 8px 20px; display: flex; gap: 8px; align-items: center; }
+.filter-ctl { display: flex; align-items: center; gap: 5px; padding: 5px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); font-size: 11px; color: var(--text-muted); cursor: pointer; transition: border-color .15s; font-family: var(--font); }
+.filter-ctl:hover { border-color: var(--border-strong); }
+.filter-ctl.date-ctl { background: var(--teal-light); border-color: var(--teal-border); color: var(--teal); font-weight: 500; }
+.filter-ctl svg { width: 12px; height: 12px; opacity: .6; }
+.filter-arrow { font-size: 8px; opacity: .5; }
+.filter-sep { width: 1px; height: 16px; background: var(--border); margin: 0 4px; }
+
+/* ─── BODY ───────────────────────── */
+.body { padding: 16px 20px 40px; }
+.page { display: none; }
+.page.active { display: block; }
+
+/* ─── SECTION HEADER ─────────────── */
+.section-hdr { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--text-hint); margin: 16px 0 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.section-hdr-label { display: flex; align-items: center; gap: 6px; }
+
+/* ─── SCORECARD GRID ─────────────── */
+.sc-grid { display: grid; gap: 8px; margin-bottom: 12px; }
+.sc-6 { grid-template-columns: repeat(6, minmax(0,1fr)); }
+.sc-4 { grid-template-columns: repeat(4, minmax(0,1fr)); }
+.sc { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+.sc-label { font-size: 10px; color: var(--text-hint); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
+.sc-value { font-size: 22px; font-weight: 500; line-height: 1.1; margin-bottom: 3px; }
+.sc-pace { font-size: 10px; color: var(--text-muted); }
+.sc-proj { font-size: 10px; margin-top: 1px; }
+.c-up { color: var(--teal-mid); }
+.c-dn { color: var(--red); }
+.c-warn { color: var(--amber); }
+.c-muted { color: var(--text-muted); }
+
+/* ─── TWO / THREE COL ────────────── */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+
+/* ─── CARD ───────────────────────── */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 10px; }
+.card-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--text-hint); margin-bottom: 10px; }
+
+/* ─── TABLE ──────────────────────── */
+.tbl-wrap { overflow-x: auto; margin-bottom: 10px; }
+.tbl { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; font-size: 11px; }
+.tbl th { text-align: left; padding: 7px 10px; font-size: 9px; font-weight: 600; color: var(--text-hint); background: var(--surface2); border-bottom: 1px solid var(--border); white-space: nowrap; text-transform: uppercase; letter-spacing: .04em; }
+.tbl td { padding: 7px 10px; border-bottom: 1px solid #F2F0EA; color: var(--text); white-space: nowrap; }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: #FAFAF8; }
+.tbl .tot td { font-weight: 600; background: var(--surface2); }
+.tbl .row-red td { background: #FFF8F7; }
+.tbl .row-amber td { background: #FFFDF4; }
+.tbl .row-green td { background: #F7FDF9; }
+.th-grp { background: var(--teal-light) !important; color: var(--teal) !important; text-align: center !important; font-size: 8px !important; }
+
+/* ─── BADGES ─────────────────────── */
+.badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 9px; font-weight: 600; }
+.bg { background: var(--green-light); color: var(--green); }
+.by { background: var(--amber-light); color: var(--amber); }
+.br { background: var(--red-light); color: var(--red); }
+.bb { background: var(--blue-light); color: var(--blue); }
+.bgr { background: var(--surface2); color: var(--text-muted); }
+.bteal { background: var(--teal-light); color: var(--teal); }
+
+/* ─── HEALTH DOT ─────────────────── */
+.hdot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.hg { background: #1D9E75; }
+.hy { background: #E6A817; }
+.hr { background: #D93025; }
+
+/* ─── FLAGS ──────────────────────── */
+.flag { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 9px; font-weight: 600; }
+.flag-red { background: var(--red-light); color: var(--red); }
+.flag-amb { background: var(--amber-light); color: var(--amber); }
+.flag-ok { background: var(--green-light); color: var(--green); }
+
+/* ─── TREND ──────────────────────── */
+.trend-up { color: #1D9E75; font-size: 10px; font-weight: 600; }
+.trend-dn { color: #D93025; font-size: 10px; font-weight: 600; }
+.trend-fl { color: var(--text-muted); font-size: 10px; }
+
+/* ─── TRIAGE TABLE ───────────────── */
+.triage-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.toggle-btn { font-size: 11px; padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--teal); cursor: pointer; font-weight: 500; font-family: var(--font); transition: all .15s; }
+.toggle-btn:hover { background: var(--teal-light); border-color: var(--teal-border); }
+.count-pills { display: flex; gap: 6px; }
+
+/* ─── ALERT ROWS ─────────────────── */
+.alert-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 6px; margin-bottom: 6px; border: 1px solid; }
+.ar-r { background: var(--red-light); border-color: var(--red-border); }
+.ar-y { background: var(--amber-light); border-color: var(--amber-border); }
+.ar-g { background: var(--green-light); border-color: var(--green-border); }
+.ar-icon { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+.ai-r { background: #EA4335; color: #fff; }
+.ai-y { background: #FBBC04; color: #202124; }
+.ai-g { background: #34A853; color: #fff; }
+.ar-body { flex: 1; }
+.ar-title { font-size: 11px; font-weight: 600; margin-bottom: 2px; }
+.ar-r .ar-title { color: var(--red); }
+.ar-y .ar-title { color: var(--amber); }
+.ar-g .ar-title { color: var(--green); }
+.ar-detail { font-size: 10px; color: var(--text-muted); line-height: 1.5; }
+.ar-meta { font-size: 9px; margin-top: 3px; opacity: .6; font-family: var(--mono); }
+
+/* ─── RED ZONE BADGES ────────────── */
+.rz-hot { background: var(--red-light); color: var(--red); padding: 2px 7px; border-radius: 4px; font-size: 9px; font-weight: 600; display: inline-block; }
+.rz-warm { background: var(--amber-light); color: var(--amber); padding: 2px 7px; border-radius: 4px; font-size: 9px; font-weight: 600; display: inline-block; }
+.rz-ok { background: var(--green-light); color: var(--green); padding: 2px 7px; border-radius: 4px; font-size: 9px; font-weight: 600; display: inline-block; }
+
+/* ─── FUNNEL ─────────────────────── */
+.funnel-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+.funnel-lbl { font-size: 9px; color: var(--text-muted); width: 90px; text-align: right; flex-shrink: 0; }
+.funnel-bg { flex: 1; background: #F0EEE8; border-radius: 3px; height: 18px; }
+.funnel-fill { height: 18px; border-radius: 3px; display: flex; align-items: center; padding-left: 7px; }
+.funnel-val { font-size: 10px; font-weight: 600; color: #fff; font-family: var(--mono); }
+
+/* ─── BENCH ──────────────────────── */
+.bench-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 11px; }
+.bench-row:last-child { border-bottom: none; }
+
+/* ─── PIVOT ──────────────────────── */
+.pivot { width: 100%; border-collapse: collapse; font-size: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.pivot th { padding: 6px 10px; font-size: 9px; font-weight: 600; color: var(--text-hint); background: var(--surface2); border: 1px solid var(--border); text-align: center; text-transform: uppercase; letter-spacing: .04em; }
+.pivot td { padding: 6px 10px; border: 1px solid #F2F0EA; text-align: center; }
+.pivot .setter-col { text-align: left; font-weight: 600; background: var(--surface2); }
+.pivot .closer-avg { font-weight: 600; background: var(--surface2); }
+
+/* ─── NOTE BOX ───────────────────── */
+.note-box { background: var(--teal-light); border: 1px solid var(--teal-border); border-radius: 6px; padding: 10px 14px; font-size: 11px; color: var(--teal); margin-bottom: 10px; line-height: 1.6; }
+
+/* ─── PAGE HEADER ────────────────── */
+.page-meta { display: flex; gap: 16px; margin-bottom: 14px; }
+.page-meta-item { font-size: 11px; color: var(--text-muted); }
+.page-meta-item strong { color: var(--text); font-weight: 600; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 10px; }
+
+/* responsive */
+@media (max-width: 900px) {
+  .sc-6 { grid-template-columns: repeat(3, minmax(0,1fr)); }
+  .sc-4 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .two-col, .three-col { grid-template-columns: 1fr; }
+  .rep-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+</style>
+</head>
+<body>
+
+<!-- CHROME -->
+<div class="chrome">
+  <div class="chrome-brand">
+    <div class="chrome-logo">
+      <svg viewBox="0 0 16 16"><path d="M8 1L1 5v6l7 4 7-4V5L8 1zm0 2l5 2.9v4.2L8 13l-5-2.9V5.9L8 3z"/></svg>
+    </div>
+    <span class="chrome-title">WFS Setter Director Dashboard</span>
+    <span class="chrome-badge">V5</span>
+  </div>
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="showPage('morning',this)">Morning Brief</div>
+    <div class="nav-tab" onclick="showPage('alerts',this)">Insights & Alerts</div>
+    <div class="nav-tab" onclick="showPage('redzone',this)">Red Zone</div>
+    <div class="nav-tab" onclick="showPage('scorecards',this)">MTD Scorecards</div>
+    <div class="nav-tab" onclick="showPage('reps',this)">Rep Table</div>
+    <div class="nav-tab" onclick="showPage('brands',this)">Brand Rollup</div>
+  </div>
+  <div class="chrome-right">
+    <div class="sync-badge"><div class="sync-dot"></div> EOD sync · Mar 13, 2026</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- PAGE 1: MORNING BRIEF -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="page-morning" class="page active">
+  <div class="filter-bar">
+    <div class="filter-ctl date-ctl"><svg viewBox="0 0 12 12" fill="currentColor"><rect x="1" y="2" width="10" height="9" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/><path d="M4 1v2M8 1v2M1 5h10"/></svg> Yesterday — Mar 13, 2026 <span class="filter-arrow">▾</span></div>
+    <div class="filter-ctl">All Brands <span class="filter-arrow">▾</span></div>
+    <div class="filter-ctl">All Setters <span class="filter-arrow">▾</span></div>
+  </div>
+  <div class="body">
+    <div class="section-hdr"><span class="section-hdr-label">Team pulse — yesterday vs daily KPI targets</span></div>
+    <div class="sc-grid sc-6">
+      <div class="sc"><div class="sc-label">Dials</div><div class="sc-value c-dn">1,335</div><div class="sc-pace">Target: 2,550</div><div class="sc-proj c-dn">↓ 48% below</div></div>
+      <div class="sc"><div class="sc-label">Demo Sets</div><div class="sc-value c-dn">18</div><div class="sc-pace">Target: 85</div><div class="sc-proj c-dn">↓ 79% below</div></div>
+      <div class="sc"><div class="sc-label">Closes</div><div class="sc-value c-up">4</div><div class="sc-pace">Target: 4</div><div class="sc-proj c-up">On target</div></div>
+      <div class="sc"><div class="sc-label">Show Rate</div><div class="sc-value c-dn">48.6%</div><div class="sc-pace">Target: 75%</div><div class="sc-proj c-dn">↓ 35% below</div></div>
+      <div class="sc"><div class="sc-label">Connect Rate</div><div class="sc-value c-up">5.0%</div><div class="sc-pace">Baseline: 5%</div><div class="sc-proj c-up">At baseline</div></div>
+      <div class="sc"><div class="sc-label">Revenue</div><div class="sc-value c-dn">$27K</div><div class="sc-pace">Target: $77K</div><div class="sc-proj c-dn">↓ 65% below</div></div>
+    </div>
+
+    <div class="section-hdr">
+      <span class="section-hdr-label">Rep triage — needs attention <span class="badge br" style="margin-left:6px" id="red-count">3 red</span><span class="badge by" style="margin-left:4px" id="amb-count">2 yellow</span></span>
+      <button class="toggle-btn" id="toggle-btn" onclick="toggleAll()">Show all reps</button>
+    </div>
+
+    <div class="tbl-wrap">
+    <table class="tbl" id="triage-tbl">
+      <thead>
+        <tr>
+          <th>Pri.</th><th>Setter</th><th>Brand</th><th>Health</th><th>Flag</th>
+          <th>Dials</th><th>Tgt</th><th>Sets</th><th>Tgt</th><th>Closes</th><th>Tgt</th>
+          <th>Show%</th><th>W/W</th>
+        </tr>
+      </thead>
+      <tbody id="triage-body"></tbody>
+    </table>
+    </div>
+
+    <div class="section-hdr"><span>Lead flow by brand — yesterday vs capacity threshold (25 × rep count)</span></div>
+    <div class="card">
+      <div class="card-title">Leads assigned per brand yesterday — stacked by rep · dashed line = 25 × reps in brand</div>
+      <div style="position:relative;height:200px"><canvas id="leadFlowYest"></canvas></div>
+      <div style="font-size:9px;color:var(--text-hint);margin-top:8px">Threshold line is dynamic per brand. Bars below the line = under-allocation.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- PAGE 2: INSIGHTS & ALERTS -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="page-alerts" class="page">
+  <div class="filter-bar">
+    <div class="filter-ctl date-ctl">Mar 1–13, 2026 (MTD) <span class="filter-arrow">▾</span></div>
+    <div class="filter-ctl">All Brands <span class="filter-arrow">▾</span></div>
+    <div class="filter-ctl">All Setters <span class="filter-arrow">▾</span></div>
+    <div class="filter-ctl">All Categories <span class="filter-arrow">▾</span></div>
+  </div>
+  <div class="body">
+    <div class="sc-grid sc-4" style="margin-bottom:16px">
+      <div class="sc"><div class="sc-label">Critical alerts</div><div class="sc-value c-dn">5</div></div>
+      <div class="sc"><div class="sc-label">Warnings</div><div class="sc-value c-warn">6</div></div>
+      <div class="sc"><div class="sc-label">Wins</div><div class="sc-value c-up">3</div></div>
+      <div class="sc"><div class="sc-label">At-risk revenue</div><div class="sc-value c-dn">$59K</div></div>
+    </div>
+
+    <div class="section-hdr"><span>Critical</span></div>
+    <div class="alert-row ar-r"><div class="ar-icon ai-r">!</div><div class="ar-body"><div class="ar-title">Jose Bernal & Habib Fazli — connect rate below 1% <span class="badge br" style="margin-left:5px">CT · HPH</span></div><div class="ar-detail">Both under 1% with 1,500+ dials. Below Average tier. Burning leads with zero return.</div><div class="ar-meta">Trigger: Connect Rate &lt;2% · Actual: 0.9%, 0.5%</div></div></div>
+    <div class="alert-row ar-r"><div class="ar-icon ai-r">!</div><div class="ar-body"><div class="ar-title">Team show rate 48.6% — target 75% <span class="badge br" style="margin-left:5px">Team-wide</span></div><div class="ar-detail">267 demos booked, 102 completed. 165 no-shows MTD. Biggest revenue leak on the team.</div><div class="ar-meta">Trigger: Show Rate &lt;55% · Gap: 26.4pts</div></div></div>
+    <div class="alert-row ar-r"><div class="ar-icon ai-r">!</div><div class="ar-body"><div class="ar-title">Samuel Michalcin, Jose Bernal, Caroline Christy — 3-day decline <span class="badge br" style="margin-left:5px">S8T · CT · HPH</span></div><div class="ar-detail">All three below KPI on dials and sets for 3 consecutive days. Pattern worsening not recovering.</div><div class="ar-meta">Trigger: Health Score Red 3+ consecutive days</div></div></div>
+    <div class="alert-row ar-r"><div class="ar-icon ai-r">!</div><div class="ar-body"><div class="ar-title">jun tan* — 38.6 days stalled, no next meeting <span class="badge br" style="margin-left:5px">Suraj Bali · S8T</span></div><div class="ar-detail">$7,500 deal in pipeline since Feb 3. No follow-up scheduled. Expected close May 30.</div><div class="ar-meta">Trigger: Red Zone &gt;20 days · no next meeting</div></div></div>
+    <div class="alert-row ar-r"><div class="ar-icon ai-r">!</div><div class="ar-body"><div class="ar-title">Jo Ogel — 30.6 days, expected close date missed <span class="badge br" style="margin-left:5px">Ben Barrales · S8T</span></div><div class="ar-detail">$5,500 in Funding stage. Expected close Feb 17 passed. Last contact Feb 11.</div><div class="ar-meta">Trigger: Expected close passed · still open</div></div></div>
+
+    <div class="section-hdr"><span>Warnings</span></div>
+    <div class="alert-row ar-y"><div class="ar-icon ai-y">!</div><div class="ar-body"><div class="ar-title">Conv→Set Rate 37.9% — Below Average <span class="badge by" style="margin-left:5px">Team-wide</span></div><div class="ar-detail">705 quality convos, only 267 booked. Reps are talking but not converting to demos.</div><div class="ar-meta">Trigger: Conv→Set &lt;40%</div></div></div>
+    <div class="alert-row ar-y"><div class="ar-icon ai-y">!</div><div class="ar-body"><div class="ar-title">Emery Sage — $10K gross, $376 collected (4%) <span class="badge by" style="margin-left:5px">ECU</span></div><div class="ar-detail">Worst collection rate on the team. Needs investigation — is this deal actually closed?</div><div class="ar-meta">Trigger: Collection Rate &lt;50%</div></div></div>
+    <div class="alert-row ar-y"><div class="ar-icon ai-y">!</div><div class="ar-body"><div class="ar-title">Harvey Lemus — $27.8K gross, 47% collected <span class="badge by" style="margin-left:5px">TTW</span></div><div class="ar-detail">$14.6K outstanding. Follow up on payment plans or outstanding invoices.</div><div class="ar-meta">Trigger: Collection Rate &lt;50%</div></div></div>
+    <div class="alert-row ar-y"><div class="ar-icon ai-y">!</div><div class="ar-body"><div class="ar-title">Ben Barrales — 0 won deals, 1,207 dials <span class="badge by" style="margin-left:5px">S8T</span></div><div class="ar-detail">8.5% connect rate, 8 sets, zero closes. Quality of bookings may be the issue.</div><div class="ar-meta">Trigger: Won Deals = 0 with &gt;500 dials</div></div></div>
+    <div class="alert-row ar-y"><div class="ar-icon ai-y">!</div><div class="ar-body"><div class="ar-title">David Storrs — $20K deal closing this week <span class="badge by" style="margin-left:5px">Suraj Bali · S8T</span></div><div class="ar-detail">Expected close Mar 18. Next meeting same day as close date. Needs immediate follow-up.</div><div class="ar-meta">Trigger: Red Zone · high value · close date imminent</div></div></div>
+    <div class="alert-row ar-y"><div class="ar-icon ai-y">!</div><div class="ar-body"><div class="ar-title">ECU brand trajectory declining — down 11% vs last month <span class="badge by" style="margin-left:5px">ECU</span></div><div class="ar-detail">Sets and dials both trending down week over week. Brand health at risk.</div><div class="ar-meta">Trigger: Brand trajectory &lt;-5% vs prior period</div></div></div>
+
+    <div class="section-hdr"><span>Wins</span></div>
+    <div class="alert-row ar-g"><div class="ar-icon ai-g">★</div><div class="ar-body"><div class="ar-title">Gloria Sanz — $61.7K gross, 6 closes, 100% collected, Elite connect rate <span class="badge bg" style="margin-left:5px">ECU</span></div><div class="ar-detail">Most complete performer on the team. 30 sets (team high). 10.4% connect rate — Elite tier. The standard to replicate.</div></div></div>
+    <div class="alert-row ar-g"><div class="ar-icon ai-g">★</div><div class="ar-body"><div class="ar-title">Brent Jackman — $65K on 400 dials, best revenue efficiency <span class="badge bg" style="margin-left:5px">CT</span></div><div class="ar-detail">Lowest dials, highest revenue. 5 wins, 94% collected. His approach needs to be shared with the team.</div></div></div>
+    <div class="alert-row ar-g"><div class="ar-icon ai-g">★</div><div class="ar-body"><div class="ar-title">Samuel Michalcin — 88% show rate, best on team <span class="badge bg" style="margin-left:5px">S8T</span></div><div class="ar-detail">Team average 48.6%. His confirmation process is clearly working — make it the team standard.</div></div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- PAGE 3: RED ZONE -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="page-redzone" class="page">
+  <div class="filter-bar">
+    <div class="filter-ctl date-ctl">Mar 1–13, 2026 <span class="filter-arrow">▾</span></div>
+    <div class="filter-ctl">All Brands <span class="filter-arrow">▾</span></div>
+    <div class="filter-ctl">All Setters <span class="filter-arrow">▾</span></div>
+    <div class="filter-ctl">All Closers <span class="filter-arrow">▾</span></div>
+  </div>
+  <div class="body">
+    <div class="sc-grid sc-4" style="margin-bottom:16px">
+      <div class="sc"><div class="sc-label">Critical (20+ days)</div><div class="sc-value c-dn">4</div><div class="sc-pace">Immediate action</div></div>
+      <div class="sc"><div class="sc-label">Warning (10–20 days)</div><div class="sc-value c-warn">2</div><div class="sc-pace">Monitor closely</div></div>
+      <div class="sc"><div class="sc-label">Watch (3–10 days)</div><div class="sc-value">4</div><div class="sc-pace">Early stage</div></div>
+      <div class="sc"><div class="sc-label">At-risk value</div><div class="sc-value c-dn">$82K</div><div class="sc-pace">Across all tiers</div></div>
+    </div>
+
+    <div class="section-hdr"><span>Critical — 20+ days in stage</span></div>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>Deal</th><th>Stage</th><th>Setter</th><th>Closer</th><th>Amount</th><th>Days in Stage</th><th>Last Contact</th><th>Next Meeting</th><th>Exp. Close</th><th>Setter Action</th></tr></thead>
+      <tbody>
+        <tr><td style="font-weight:600">jun tan*</td><td style="color:var(--text-muted);font-size:10px">First Call Completed</td><td>Suraj Bali</td><td>D. Thiel</td><td>$7,500</td><td><span class="rz-hot">38.6d</span></td><td>2/3/26</td><td style="color:var(--red)">None</td><td>5/30/26</td><td><span class="badge br">Follow up</span></td></tr>
+        <tr><td style="font-weight:600">Jo Ogel</td><td style="color:var(--text-muted);font-size:10px">Funding</td><td>Ben Barrales</td><td>J. Mazard</td><td>$5,500</td><td><span class="rz-hot">30.6d</span></td><td>2/11/26</td><td>3/4/26</td><td style="color:var(--red)">Missed</td><td><span class="badge br">Follow up</span></td></tr>
+        <tr><td style="font-weight:600">Javier Chavez</td><td style="color:var(--text-muted);font-size:10px">Closed Lost</td><td>Suraj Bali</td><td>U. Channaoui</td><td>—</td><td><span class="rz-hot">21.9d</span></td><td>2/18/26</td><td style="color:var(--red)">None</td><td>—</td><td><span class="badge br">Follow up</span></td></tr>
+        <tr><td style="font-weight:600">Derek Tool</td><td style="color:var(--text-muted);font-size:10px">First Call Completed</td><td>Ben Barrales</td><td>D. Thiel</td><td>—</td><td><span class="rz-hot">21.6d</span></td><td>3/5/26</td><td style="color:var(--red)">None</td><td>—</td><td><span class="badge br">Follow up</span></td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="section-hdr"><span>Warning — 10–20 days in stage</span></div>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>Deal</th><th>Stage</th><th>Setter</th><th>Closer</th><th>Amount</th><th>Days in Stage</th><th>Last Contact</th><th>Next Meeting</th><th>Exp. Close</th><th>Setter Action</th></tr></thead>
+      <tbody>
+        <tr><td style="font-weight:600">David Storrs</td><td style="color:var(--text-muted);font-size:10px">First Call Completed</td><td>Suraj Bali</td><td>N. Kadosh</td><td>$20,000</td><td><span class="rz-warm">18.8d</span></td><td>2/23/26</td><td>3/18/26</td><td>3/18/26</td><td><span class="badge by">Monitor</span></td></tr>
+        <tr><td style="font-weight:600">Bill Cherep</td><td style="color:var(--text-muted);font-size:10px">First Call Completed</td><td>S. Michalcin</td><td>U. Channaoui</td><td>—</td><td><span class="rz-warm">7.6d</span></td><td>3/5/26</td><td style="color:var(--red)">None</td><td>—</td><td><span class="badge by">Monitor</span></td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="section-hdr"><span>Watch — 3–10 days in stage</span></div>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>Deal</th><th>Stage</th><th>Setter</th><th>Closer</th><th>Amount</th><th>Days in Stage</th><th>Last Contact</th><th>Next Meeting</th><th>Exp. Close</th><th>Setter Action</th></tr></thead>
+      <tbody>
+        <tr><td style="font-weight:600">Vincenzo De Altin</td><td style="color:var(--text-muted);font-size:10px">First Call Completed</td><td>S. Michalcin</td><td>U. Channaoui</td><td>—</td><td><span class="rz-ok">4.6d</span></td><td>3/10/26</td><td style="color:var(--red)">None</td><td>—</td><td><span class="bgr badge">Watch</span></td></tr>
+        <tr><td style="font-weight:600">Alex Winter</td><td style="color:var(--text-muted);font-size:10px">First Call Completed</td><td>S. Michalcin</td><td>D. Thiel</td><td>$10,000</td><td><span class="rz-ok">3.7d</span></td><td>3/10/26</td><td>3/10/26</td><td>4/3/26</td><td><span class="badge bg">OK</span></td></tr>
+        <tr><td style="font-weight:600">Ovais Mahmood</td><td style="color:var(--text-muted);font-size:10px">Closed Lost</td><td>S. Michalcin</td><td>J. Mazard</td><td>—</td><td><span class="rz-ok">2.9d</span></td><td>3/3/26</td><td style="color:var(--red)">None</td><td>—</td><td><span class="bgr badge">Watch</span></td></tr>
+        <tr><td style="font-weight:600">Charles Shoats</td><td style="color:var(--text-muted);font-size:10px">First Call Completed</td><td>Ben Barrales</td><td>D. Thiel</td><td>$5,500</td><td><span class="rz-ok">2.6d</span></td><td>3/13/26</td><td>3/13/26</td><td>3/17/26</td><td><span class="badge bg">OK</span></td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- PAGE 4: MTD SCORECARDS -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="page-scorecards" class="page">
+  <div class="filter-bar">
+    <div class="filter-ctl date-ctl">Mar 1–13, 2026 (MTD) <span class="filter-arrow">▾</span></div>
+    <div class="filter-ctl">All Brands <span class="filter-arrow">▾</span></div>
+    <div class="filter-ctl">All Setters <span class="filter-arrow">▾</span></div>
+  </div>
+  <div class="body">
+    <div class="section-hdr"><span>MTD actuals vs pace targets — 9 of 22 working days elapsed</span></div>
+    <div class="sc-grid sc-6">
+      <div class="sc"><div class="sc-label">Dials</div><div class="sc-value c-dn">17,405</div><div class="sc-pace">Pace: 21,600</div><div class="sc-proj c-dn">Proj: ~40K</div></div>
+      <div class="sc"><div class="sc-label">Demo Sets</div><div class="sc-value c-dn">267</div><div class="sc-pace">Pace: 765</div><div class="sc-proj c-dn">Proj: ~623 <span style="font-size:9px">↓ W/W -14%</span></div></div>
+      <div class="sc"><div class="sc-label">Closes</div><div class="sc-value c-dn">47</div><div class="sc-pace">Pace: 122</div><div class="sc-proj c-dn">Proj: ~109</div></div>
+      <div class="sc"><div class="sc-label">Show Rate</div><div class="sc-value c-dn">48.6%</div><div class="sc-pace">Target: 75%</div><div class="sc-proj c-dn">↓ W/W -6%</div></div>
+      <div class="sc"><div class="sc-label">Won Deals</div><div class="sc-value c-dn">47</div><div class="sc-pace">Pace: 61</div><div class="sc-proj c-dn">Proj: ~110</div></div>
+      <div class="sc"><div class="sc-label">Gross Revenue</div><div class="sc-value c-dn">$429K</div><div class="sc-pace">Pace: $618K</div><div class="sc-proj c-dn">Proj: ~$1.0M</div></div>
+    </div>
+    <div class="sc-grid sc-6">
+      <div class="sc"><div class="sc-label">Connect Rate</div><div class="sc-value c-up">5.0%</div><div class="sc-pace">Baseline: 5%</div><div class="sc-proj c-up">At baseline</div></div>
+      <div class="sc"><div class="sc-label">Collected</div><div class="sc-value">$370K</div><div class="sc-pace">Gap: $59K</div><div class="sc-proj c-warn">86% coll. rate</div></div>
+      <div class="sc"><div class="sc-label">Conn→Set %</div><div class="sc-value c-warn">30.5%</div><div class="sc-pace">Good: 30–40%</div><div class="sc-proj c-warn">Good tier</div></div>
+      <div class="sc"><div class="sc-label">Conv→Set %</div><div class="sc-value c-dn">37.9%</div><div class="sc-pace">Avg: 40–55%</div><div class="sc-proj c-dn">Below avg ↓ W/W -4%</div></div>
+      <div class="sc"><div class="sc-label">Set→Close %</div><div class="sc-value">17.6%</div><div class="sc-pace">47 of 267 sets</div><div class="sc-proj c-muted">—</div></div>
+      <div class="sc"><div class="sc-label">Avg Rev / Rep</div><div class="sc-value">$26.8K</div><div class="sc-pace">$429K ÷ 16 reps</div><div class="sc-proj c-muted">—</div></div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Conversion funnel — volume drop-off</div>
+        <div class="funnel-row"><span class="funnel-lbl">Dials</span><div class="funnel-bg"><div class="funnel-fill" style="width:100%;background:#1A73E8"><span class="funnel-val">17,405</span></div></div></div>
+        <div class="funnel-row"><span class="funnel-lbl">Connected</span><div class="funnel-bg"><div class="funnel-fill" style="width:5%;background:#1558B0"><span class="funnel-val">875</span></div></div></div>
+        <div class="funnel-row"><span class="funnel-lbl">Quality convos</span><div class="funnel-bg"><div class="funnel-fill" style="width:4%;background:#0F4A96"><span class="funnel-val">705</span></div></div></div>
+        <div class="funnel-row"><span class="funnel-lbl">Demo sets</span><div class="funnel-bg"><div class="funnel-fill" style="width:1.5%;background:#0A3882"><span class="funnel-val">267</span></div></div></div>
+        <div class="funnel-row"><span class="funnel-lbl">Completed</span><div class="funnel-bg"><div class="funnel-fill" style="width:.6%;background:#072D6E"><span class="funnel-val">102</span></div></div></div>
+        <div class="funnel-row"><span class="funnel-lbl">Won deals</span><div class="funnel-bg"><div class="funnel-fill" style="width:.27%;background:#051F52"><span class="funnel-val">47</span></div></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Benchmark tiers</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <div style="font-size:10px;font-weight:600;margin-bottom:6px;color:var(--text)">Conn→Set Rate</div>
+            <div class="bench-row"><span style="font-size:10px;color:var(--text-muted)">Elite</span><span class="badge bg">40%+</span></div>
+            <div class="bench-row"><span style="font-size:10px;color:var(--text-muted)">Good</span><span class="badge bb">30–40%</span></div>
+            <div class="bench-row"><span style="font-size:10px;color:var(--text-muted)">Average</span><span class="badge by">20–30%</span></div>
+            <div class="bench-row"><span style="font-size:10px;color:var(--text-muted)">Below avg</span><span class="badge br">&lt;20%</span></div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:600;margin-bottom:6px;color:var(--text)">Show Rate</div>
+            <div class="bench-row"><span style="font-size:10px;color:var(--text-muted)">Elite</span><span class="badge bg">75%+</span></div>
+            <div class="bench-row"><span style="font-size:10px;color:var(--text-muted)">Good</span><span class="badge bb">65–75%</span></div>
+            <div class="bench-row"><span style="font-size:10px;color:var(--text-muted)">Average</span><span class="badge by">55–65%</span></div>
+            <div class="bench-row"><span style="font-size:10px;color:var(--text-muted)">Below avg</span><span class="badge br">&lt;55%</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-hdr"><span>Lead flow MTD — by brand vs capacity threshold (25 × rep count × working days elapsed)</span></div>
+    <div class="card">
+      <div class="card-title">Cumulative leads assigned per brand MTD — stacked by rep · threshold = 25 × reps × 9 days</div>
+      <div style="position:relative;height:200px"><canvas id="leadFlowMTD"></canvas></div>
+      <div style="font-size:9px;color:var(--text-hint);margin-top:8px">MTD threshold moves per brand and per date range. Bars below = chronic under-allocation.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- PAGE 5: REP TABLE -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="page-reps" class="page">
+  <div class="filter-bar">
+    <div class="filter-ctl date-ctl">Mar 1–13, 2026 (MTD) <span class="filter-arrow">▾</span></div>
+    <div class="filter-ctl">All Brands <span class="filter-arrow">▾</span></div>
+    <div class="filter-ctl">Sort: Health Score ▾</div>
+  </div>
+  <div class="body">
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th rowspan="2" style="vertical-align:bottom">Setter</th>
+          <th rowspan="2" style="vertical-align:bottom">Brand</th>
+          <th rowspan="2" style="vertical-align:bottom">Health</th>
+          <th rowspan="2" style="vertical-align:bottom">Flag</th>
+          <th rowspan="2" style="vertical-align:bottom">Pri.</th>
+          <th colspan="4" class="th-grp">Effort</th>
+          <th colspan="4" class="th-grp">Conversion</th>
+          <th colspan="3" class="th-grp">Revenue</th>
+          <th colspan="2" class="th-grp">Trend</th>
+        </tr>
+        <tr>
+          <th>Dials</th><th>Conn%</th><th>Quality</th><th>Talk(m)</th>
+          <th>Sets</th><th>Show%</th><th>Won</th><th>S→C%</th>
+          <th>Gross</th><th>Collected</th><th>Coll%</th>
+          <th>W/W</th><th>vs LM</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="row-red"><td style="font-weight:600">Jose Bernal</td><td><span class="badge bgr">CT</span></td><td><span class="hdot hr"></span></td><td><span class="flag flag-red">3-day ↓</span></td><td style="color:var(--red);font-weight:600">1</td><td>1,640</td><td><span class="badge br">0.9%</span></td><td>44</td><td>691</td><td>4</td><td><span class="badge br">—</span></td><td>2</td><td>50%</td><td>$13K</td><td>$19K</td><td><span class="badge bg">100%</span></td><td class="trend-dn">↓ -31%</td><td class="trend-dn">↓ -18%</td></tr>
+        <tr class="row-red"><td style="font-weight:600">Caroline Christy</td><td><span class="badge bgr">HPH</span></td><td><span class="hdot hr"></span></td><td><span class="flag flag-red">3-day ↓</span></td><td style="color:var(--red);font-weight:600">2</td><td>1,160</td><td><span class="badge br">1.7%</span></td><td>37</td><td>542</td><td>22</td><td><span class="badge br">32%</span></td><td>2</td><td>9%</td><td>$18K</td><td>$18K</td><td><span class="badge bg">100%</span></td><td class="trend-dn">↓ -18%</td><td class="trend-dn">↓ -12%</td></tr>
+        <tr class="row-red"><td style="font-weight:600">Samuel Michalcin</td><td><span class="badge bgr">S8T</span></td><td><span class="hdot hr"></span></td><td><span class="flag flag-red">3-day ↓</span></td><td style="color:var(--red);font-weight:600">3</td><td>1,165</td><td><span class="badge bg">6.4%</span></td><td>30</td><td>591</td><td>8</td><td><span class="badge bg">88%</span></td><td>2</td><td>25%</td><td>$15K</td><td>$15K</td><td><span class="badge bg">100%</span></td><td class="trend-dn">↓ -22%</td><td class="trend-dn">↓ -9%</td></tr>
+        <tr class="row-amber"><td style="font-weight:600">Ben Barrales</td><td><span class="badge bgr">S8T</span></td><td><span class="hdot hy"></span></td><td><span class="flag flag-amb">1-day ✗</span></td><td style="color:var(--amber);font-weight:600">4</td><td>1,207</td><td><span class="badge bg">8.5%</span></td><td>51</td><td>902</td><td>8</td><td><span class="badge br">38%</span></td><td>0</td><td>0%</td><td>$0</td><td>$0</td><td><span class="badge bgr">—</span></td><td class="trend-dn">↓ -8%</td><td class="trend-fl">→ flat</td></tr>
+        <tr class="row-amber"><td style="font-weight:600">Harvey Lemus</td><td><span class="badge bgr">TTW</span></td><td><span class="hdot hy"></span></td><td><span class="flag flag-amb">1-day ✗</span></td><td style="color:var(--amber);font-weight:600">5</td><td>651</td><td><span class="badge bg">7.8%</span></td><td>54</td><td>1,057</td><td>17</td><td><span class="badge br">29%</span></td><td>4</td><td>24%</td><td>$28K</td><td>$13K</td><td><span class="badge br">47%</span></td><td class="trend-fl">→ flat</td><td class="trend-up">↑ +6%</td></tr>
+        <tr><td style="font-weight:600">Habib Fazli</td><td><span class="badge bgr">HPH</span></td><td><span class="hdot hy"></span></td><td><span class="flag flag-ok">On track</span></td><td style="color:var(--text-muted)">6</td><td>1,509</td><td><span class="badge br">0.5%</span></td><td>9</td><td>152</td><td>3</td><td><span class="badge br">—</span></td><td>3</td><td>100%</td><td>$22K</td><td>$22K</td><td><span class="badge bg">100%</span></td><td class="trend-up">↑ +3%</td><td class="trend-fl">→ flat</td></tr>
+        <tr><td style="font-weight:600">Emery Sage</td><td><span class="badge bgr">ECU</span></td><td><span class="hdot hy"></span></td><td><span class="flag flag-ok">On track</span></td><td style="color:var(--text-muted)">7</td><td>1,276</td><td><span class="badge by">4.5%</span></td><td>39</td><td>779</td><td>19</td><td><span class="badge br">11%</span></td><td>1</td><td>5%</td><td>$10K</td><td>$0.4K</td><td><span class="badge br">4%</span></td><td class="trend-up">↑ +4%</td><td class="trend-dn">↓ -7%</td></tr>
+        <tr class="row-green"><td style="font-weight:600">Gloria Sanz</td><td><span class="badge bgr">ECU</span></td><td><span class="hdot hg"></span></td><td><span class="flag flag-ok">On track</span></td><td style="color:var(--green)">8</td><td>1,355</td><td><span class="badge bg">10.4%</span></td><td>120</td><td>1,339</td><td>30</td><td><span class="badge by">40%</span></td><td>6</td><td>20%</td><td>$62K</td><td>$62K</td><td><span class="badge bg">100%</span></td><td class="trend-up">↑ +12%</td><td class="trend-up">↑ +9%</td></tr>
+        <tr class="row-green"><td style="font-weight:600">Brent Jackman</td><td><span class="badge bgr">CT</span></td><td><span class="hdot hg"></span></td><td><span class="flag flag-ok">On track</span></td><td style="color:var(--green)">9</td><td>400</td><td><span class="badge bg">7.5%</span></td><td>25</td><td>—</td><td>8</td><td><span class="badge by">50%</span></td><td>5</td><td>63%</td><td>$65K</td><td>$61K</td><td><span class="badge bg">94%</span></td><td class="trend-up">↑ +9%</td><td class="trend-up">↑ +14%</td></tr>
+        <tr class="row-green"><td style="font-weight:600">Saray Cortes</td><td><span class="badge bgr">TTW</span></td><td><span class="hdot hg"></span></td><td><span class="flag flag-ok">On track</span></td><td style="color:var(--green)">10</td><td>539</td><td><span class="badge bg">15.2%</span></td><td>68</td><td>1,201</td><td>17</td><td><span class="badge by">47%</span></td><td>2</td><td>12%</td><td>$14K</td><td>$5K</td><td><span class="badge br">35%</span></td><td class="trend-up">↑ +5%</td><td class="trend-up">↑ +8%</td></tr>
+        <tr class="tot"><td>Team Total</td><td></td><td></td><td></td><td></td><td>17,405</td><td>5.0%</td><td>705</td><td>12,054</td><td>267</td><td>48.6%</td><td>47</td><td>17.6%</td><td>$429K</td><td>$370K</td><td>86%</td><td class="trend-dn">↓ -8%</td><td class="trend-dn">↓ -5%</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div style="font-size:9px;color:var(--text-hint);margin-top:6px;font-family:var(--mono)">Default sort: Health (Red → Yellow → Green) then Priority score. W/W = this week vs same days last week. vs LM = vs same MTD point last month.</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- PAGE 6: BRAND ROLLUP -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="page-brands" class="page">
+  <div class="filter-bar">
+    <div class="filter-ctl date-ctl">Mar 1–13, 2026 (MTD) <span class="filter-arrow">▾</span></div>
+    <div class="filter-ctl">All Brands <span class="filter-arrow">▾</span></div>
+  </div>
+  <div class="body">
+    <div class="section-hdr"><span>Brand performance — MTD with trajectory vs same point last month</span></div>
+    <div class="tbl-wrap">
+    <table class="tbl">
+      <thead><tr><th>Brand</th><th>Reps</th><th>Health</th><th>Trajectory</th><th>Dials</th><th>Sets</th><th>Show%</th><th>Won</th><th>Gross Rev</th><th>Collected</th><th>Coll%</th><th>W/W</th><th>vs Last Month</th></tr></thead>
+      <tbody>
+        <tr><td style="font-weight:600">ECU</td><td>2</td><td><span class="hdot hy"></span></td><td><span style="color:var(--red);font-weight:600">↓ Declining</span></td><td>2,631</td><td>49</td><td>26%</td><td>7</td><td>$72K</td><td>$62K</td><td><span class="badge bg">86%</span></td><td class="trend-dn">↓ -11%</td><td class="trend-dn">↓ -11%</td></tr>
+        <tr><td style="font-weight:600">S8T</td><td>3</td><td><span class="hdot hr"></span></td><td><span style="color:var(--red);font-weight:600">↓ Declining</span></td><td>3,339</td><td>25</td><td>63%</td><td>5</td><td>$40K</td><td>$30K</td><td><span class="badge by">75%</span></td><td class="trend-dn">↓ -15%</td><td class="trend-dn">↓ -9%</td></tr>
+        <tr><td style="font-weight:600">HPH</td><td>3</td><td><span class="hdot hr"></span></td><td><span style="color:var(--text-muted);font-weight:600">→ Stable</span></td><td>4,177</td><td>40</td><td>35%</td><td>7</td><td>$56K</td><td>$56K</td><td><span class="badge bg">100%</span></td><td class="trend-fl">→ flat</td><td class="trend-fl">→ +2%</td></tr>
+        <tr><td style="font-weight:600">CT</td><td>2</td><td><span class="hdot hg"></span></td><td><span style="color:var(--teal-mid);font-weight:600">↑ Improving</span></td><td>2,172</td><td>15</td><td>67%</td><td>9</td><td>$100K</td><td>$99K</td><td><span class="badge bg">99%</span></td><td class="trend-up">↑ +11%</td><td class="trend-up">↑ +16%</td></tr>
+        <tr><td style="font-weight:600">TTW</td><td>2</td><td><span class="hdot hg"></span></td><td><span style="color:var(--teal-mid);font-weight:600">↑ Improving</span></td><td>1,190</td><td>34</td><td>38%</td><td>6</td><td>$41K</td><td>$18K</td><td><span class="badge br">44%</span></td><td class="trend-up">↑ +6%</td><td class="trend-up">↑ +8%</td></tr>
+        <tr><td style="font-weight:600">DBB</td><td>1</td><td><span class="hdot hy"></span></td><td><span style="color:var(--text-muted);font-weight:600">→ Stable</span></td><td>1,168</td><td>12</td><td>67%</td><td>1</td><td>$8K</td><td>$22K</td><td><span class="badge bg">100%</span></td><td class="trend-fl">→ flat</td><td class="trend-fl">→ -2%</td></tr>
+        <tr class="tot"><td>All Brands</td><td>16</td><td></td><td></td><td>17,405</td><td>267</td><td>48.6%</td><td>47</td><td>$429K</td><td>$370K</td><td>86%</td><td class="trend-dn">↓ -8%</td><td class="trend-dn">↓ -5%</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="section-hdr"><span>Setter → closer performance matrix — close rate % at each intersection</span></div>
+    <div class="note-box">If a closer's column average is significantly below all other closers, it is a closer performance issue — not a setter issue. U. Channaoui averaging 10% across all setters is the key signal here.</div>
+    <div class="tbl-wrap">
+    <table class="pivot">
+      <thead>
+        <tr>
+          <th style="text-align:left">Setter \ Closer</th>
+          <th>D. Thiel</th><th>J. Mazard</th><th>N. Kadosh</th><th>U. Channaoui</th><th>Avg</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="setter-col">Gloria Sanz</td><td><span class="badge bg">42%</span></td><td><span class="badge bg">38%</span></td><td><span class="badge bg">40%</span></td><td><span class="badge by">28%</span></td><td style="font-weight:600">37%</td></tr>
+        <tr><td class="setter-col">Brent Jackman</td><td><span class="badge bg">55%</span></td><td><span class="badge bg">48%</span></td><td><span class="badge bg">50%</span></td><td><span class="badge by">30%</span></td><td style="font-weight:600">46%</td></tr>
+        <tr><td class="setter-col">Ben Barrales</td><td><span class="badge by">22%</span></td><td><span class="badge br">8%</span></td><td><span class="badge by">18%</span></td><td><span class="badge br">5%</span></td><td style="font-weight:600">13%</td></tr>
+        <tr><td class="setter-col">Suraj Bali</td><td><span class="badge bg">35%</span></td><td><span class="badge by">20%</span></td><td><span class="badge bg">38%</span></td><td><span class="badge br">10%</span></td><td style="font-weight:600">26%</td></tr>
+        <tr><td class="setter-col">Samuel Michalcin</td><td><span class="badge bg">40%</span></td><td><span class="badge br">12%</span></td><td><span class="badge by">25%</span></td><td><span class="badge br">8%</span></td><td style="font-weight:600">21%</td></tr>
+        <tr class="closer-avg"><td class="setter-col">Closer avg</td><td style="font-weight:600">39%</td><td style="font-weight:600">25%</td><td style="font-weight:600">34%</td><td style="font-weight:600;color:var(--red)">10%</td><td style="font-weight:600">27%</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── NAV ──────────────────────────────────────────────────────
+function showPage(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  el.classList.add('active');
+  if (id === 'morning' && !window.chartsInit) initCharts();
+  if (id === 'scorecards' && !window.scoreChartsInit) initScoreCharts();
+}
+
+// ─── TRIAGE TABLE ─────────────────────────────────────────────
+const reps = [
+  { name:'Jose Bernal', brand:'CT', health:'red', flag:'3-day ↓', dials:142, dialT:150, sets:1, setT:5, closes:0, closeT:1, show:'—', ww:'↓ -31%', pri:1 },
+  { name:'Caroline Christy', brand:'HPH', health:'red', flag:'3-day ↓', dials:89, dialT:150, sets:3, setT:5, closes:0, closeT:1, show:'32%', ww:'↓ -18%', pri:2 },
+  { name:'Samuel Michalcin', brand:'S8T', health:'red', flag:'3-day ↓', dials:108, dialT:150, sets:2, setT:5, closes:1, closeT:1, show:'88%', ww:'↓ -22%', pri:3 },
+  { name:'Ben Barrales', brand:'S8T', health:'yellow', flag:'1-day ✗', dials:158, dialT:150, sets:3, setT:5, closes:0, closeT:1, show:'38%', ww:'↓ -8%', pri:4 },
+  { name:'Harvey Lemus', brand:'TTW', health:'yellow', flag:'1-day ✗', dials:98, dialT:150, sets:5, setT:5, closes:1, closeT:1, show:'29%', ww:'→ flat', pri:5 },
+  { name:'Gloria Sanz', brand:'ECU', health:'green', flag:'On track', dials:162, dialT:150, sets:6, setT:5, closes:1, closeT:1, show:'83%', ww:'↑ +12%', pri:8 },
+  { name:'Brent Jackman', brand:'CT', health:'green', flag:'On track', dials:155, dialT:150, sets:6, setT:5, closes:2, closeT:1, show:'75%', ww:'↑ +9%', pri:9 },
+  { name:'Saray Cortes', brand:'TTW', health:'green', flag:'On track', dials:154, dialT:150, sets:5, setT:5, closes:0, closeT:1, show:'62%', ww:'↑ +5%', pri:10 },
+];
+
+let showAll = false;
+
+function renderTriage() {
+  const body = document.getElementById('triage-body');
+  const filtered = showAll ? reps : reps.filter(r => r.health !== 'green');
+  body.innerHTML = filtered.map(r => {
+    const hDot = r.health === 'red' ? 'hr' : r.health === 'yellow' ? 'hy' : 'hg';
+    const flagCls = r.health === 'red' ? 'flag-red' : r.health === 'yellow' ? 'flag-amb' : 'flag-ok';
+    const rowCls = r.health === 'red' ? 'row-red' : r.health === 'yellow' ? 'row-amber' : 'row-green';
+    const priColor = r.health === 'red' ? 'var(--red)' : r.health === 'yellow' ? 'var(--amber)' : 'var(--green)';
+    const dOk = r.dials >= r.dialT, sOk = r.sets >= r.setT, cOk = r.closes >= r.closeT;
+    const wwCls = r.ww.startsWith('↑') ? 'trend-up' : r.ww.startsWith('↓') ? 'trend-dn' : 'trend-fl';
+    return `<tr class="${rowCls}">
+      <td style="font-weight:600;color:${priColor}">${r.pri}</td>
+      <td style="font-weight:600">${r.name}</td>
+      <td><span class="badge bgr">${r.brand}</span></td>
+      <td><span class="hdot ${hDot}"></span></td>
+      <td><span class="flag ${flagCls}">${r.flag}</span></td>
+      <td style="color:${dOk?'var(--teal-mid)':'var(--red)'};font-weight:600">${r.dials}</td>
+      <td style="color:var(--text-muted)">${r.dialT}</td>
+      <td style="color:${sOk?'var(--teal-mid)':'var(--red)'};font-weight:600">${r.sets}</td>
+      <td style="color:var(--text-muted)">${r.setT}</td>
+      <td style="color:${cOk?'var(--teal-mid)':'var(--red)'};font-weight:600">${r.closes}</td>
+      <td style="color:var(--text-muted)">${r.closeT}</td>
+      <td>${r.show}</td>
+      <td class="${wwCls}">${r.ww}</td>
+    </tr>`;
+  }).join('');
+}
+
+function toggleAll() {
+  showAll = !showAll;
+  document.getElementById('toggle-btn').textContent = showAll ? 'Show flagged only' : 'Show all reps';
+  renderTriage();
+}
+
+renderTriage();
+
+// ─── CHARTS ───────────────────────────────────────────────────
+const TEAL = '#1D9E75', RED = '#D93025', AMBER = '#E6A817', PURPLE = '#7F77DD', CORAL = '#D85A30', GRID = 'rgba(0,0,0,0.05)';
+window.chartsInit = false;
+window.scoreChartsInit = false;
+
+function initCharts() {
+  window.chartsInit = true;
+  const brands = ['S8T', 'ECU', 'CT', 'TTW', 'HPH', 'DBB'];
+  const repCounts = [3, 2, 2, 2, 3, 1];
+  const thresholds = repCounts.map(n => n * 25);
+
+  new Chart(document.getElementById('leadFlowYest'), {
+    type: 'bar',
+    data: {
+      labels: brands,
+      datasets: [
+        { label: 'Rep 1', data: [28, 32, 26, 22, 18, 25], backgroundColor: TEAL + '66', borderColor: TEAL, borderWidth: 1, borderRadius: 3 },
+        { label: 'Rep 2', data: [22, 18, 22, 20, 14, 0], backgroundColor: AMBER + '66', borderColor: AMBER, borderWidth: 1, borderRadius: 3 },
+        { label: 'Rep 3', data: [15, 0, 0, 0, 10, 0], backgroundColor: PURPLE + '66', borderColor: PURPLE, borderWidth: 1, borderRadius: 3 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: true, labels: { font: { size: 10, family: 'DM Sans' }, boxWidth: 10 } } },
+      scales: {
+        x: { stacked: true, ticks: { font: { size: 10 } }, grid: { display: false } },
+        y: { stacked: true, ticks: { font: { size: 10 } }, grid: { color: GRID } }
+      }
+    },
+    plugins: [{
+      id: 'threshLines',
+      afterDraw(chart) {
+        const { ctx, chartArea: { left, right }, scales: { x, y } } = chart;
+        thresholds.forEach((t, i) => {
+          const xPos = x.getPixelForValue(i);
+          const yPos = y.getPixelForValue(t);
+          const bw = x.width / brands.length * 0.55;
+          ctx.save();
+          ctx.strokeStyle = RED;
+          ctx.lineWidth = 2;
+          ctx.setLineDash([5, 3]);
+          ctx.beginPath();
+          ctx.moveTo(xPos - bw / 2, yPos);
+          ctx.lineTo(xPos + bw / 2, yPos);
+          ctx.stroke();
+          ctx.restore();
+        });
+      }
+    }]
+  });
+}
+
+function initScoreCharts() {
+  window.scoreChartsInit = true;
+  const brands = ['S8T', 'ECU', 'CT', 'TTW', 'HPH', 'DBB'];
+  const repCounts = [3, 2, 2, 2, 3, 1];
+  const mtdThresh = repCounts.map(n => n * 25 * 9);
+
+  new Chart(document.getElementById('leadFlowMTD'), {
+    type: 'bar',
+    data: {
+      labels: brands,
+      datasets: [
+        { label: 'Rep 1', data: [252, 288, 234, 198, 162, 225], backgroundColor: TEAL + '66', borderColor: TEAL, borderWidth: 1, borderRadius: 3 },
+        { label: 'Rep 2', data: [198, 162, 198, 180, 126, 0], backgroundColor: AMBER + '66', borderColor: AMBER, borderWidth: 1, borderRadius: 3 },
+        { label: 'Rep 3', data: [135, 0, 0, 0, 90, 0], backgroundColor: PURPLE + '66', borderColor: PURPLE, borderWidth: 1, borderRadius: 3 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: true, labels: { font: { size: 10, family: 'DM Sans' }, boxWidth: 10 } } },
+      scales: {
+        x: { stacked: true, ticks: { font: { size: 10 } }, grid: { display: false } },
+        y: { stacked: true, ticks: { font: { size: 10 } }, grid: { color: GRID } }
+      }
+    },
+    plugins: [{
+      id: 'mtdThreshLines',
+      afterDraw(chart) {
+        const { ctx, scales: { x, y } } = chart;
+        mtdThresh.forEach((t, i) => {
+          const xPos = x.getPixelForValue(i);
+          const yPos = y.getPixelForValue(t);
+          const bw = x.width / brands.length * 0.55;
+          ctx.save();
+          ctx.strokeStyle = RED;
+          ctx.lineWidth = 2;
+          ctx.setLineDash([5, 3]);
+          ctx.beginPath();
+          ctx.moveTo(xPos - bw / 2, yPos);
+          ctx.lineTo(xPos + bw / 2, yPos);
+          ctx.stroke();
+          ctx.restore();
+        });
+      }
+    }]
+  });
+}
+
+// init morning chart on load
+window.addEventListener('load', initCharts);
+</script>
+</body>
+</html>
