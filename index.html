@@ -179,8 +179,11 @@ tr:hover td{background:#FAFAF8}
     </div>
 
     <!-- BRAND SUMMARY -->
-    <div class="shdr"><span>Brand summary — dominant health status · click brand to filter</span></div>
-    <div class="brand-grid" id="brand-grid"></div>
+    <div class="shdr"><span>Brand summary — dominant health status · sorted red first</span></div>
+    <div class="tw"><table>
+      <thead><tr><th>Brand</th><th>Reps</th><th>Health</th><th>MTD Sets</th><th>Sets Pace</th><th>Show Rate</th><th>Gross Revenue</th><th>Proj. Month-End</th><th>Trajectory</th><th>vs Last Month</th></tr></thead>
+      <tbody id="brand-body"></tbody>
+    </table></div>
 
     <!-- ACTIVITY -->
     <div class="sec-ban"><div class="sec-ban-lbl">Activity Metrics</div><div class="sec-ban-line"></div></div>
@@ -253,7 +256,7 @@ tr:hover td{background:#FAFAF8}
           <th>Dials</th><th>Conn%</th>
           <th>Conn→Set%</th><th>Conv→Set%</th>
           <th>Sets</th><th>Show%</th><th>S→C%</th>
-          <th>Gross Rev</th><th>Coll%</th>
+          <th>Gross Rev</th><th>Cash Collected</th>
         </tr>
       </thead>
       <tbody id="rep-body"></tbody>
@@ -296,35 +299,20 @@ const brands=[
 ];
 
 function renderBrands(){
-  const g=document.getElementById('brand-grid');
-  g.innerHTML=brands.map(b=>{
-    const bc=b.h==='red'?'bc-r':b.h==='yellow'?'bc-a':'bc-g';
+  const tbody=document.getElementById('brand-body');
+  const showRate={'ECU':'26%','S8T':'63%','HPH':'35%','CT':'67%','TTW':'38%'};
+  tbody.innerHTML=brands.map(b=>{
+    const rc=b.h==='red'?'rr':b.h==='yellow'?'ra':'rg';
     const hb=b.h==='red'?'br':b.h==='yellow'?'by':'bg';
-    const hLabel=b.h==='red'?'Red':'b.h'==='yellow'?'Yellow':'Green';
-    const tj=b.traj.startsWith('↑')?'cup':b.traj.startsWith('↓')?'cdn':'cmut';
-    const wwc=b.ww.startsWith('+')?'cup':b.ww.startsWith('-')?'cdn':'cmut';
-    return `<div class="brand-card ${bc}" onclick="filterBrand('${b.id}')">
-      <div class="bc-top">
-        <span class="bc-name">${b.id}</span>
-        <span class="b ${hb}">${b.h==='red'?'Red':b.h==='yellow'?'Yellow':'Green'}</span>
-      </div>
-      <div class="bc-metrics">
-        <div class="bc-metric"><div class="bc-metric-lbl">Reps</div><div class="bc-metric-val">${b.reps}</div></div>
-        <div class="bc-metric"><div class="bc-metric-lbl">Sets vs Pace</div><div class="bc-metric-val">${b.sets}<span style="color:var(--text-muted);font-size:9px"> / ${b.sets_pace}</span></div></div>
-        <div class="bc-metric"><div class="bc-metric-lbl">Revenue</div><div class="bc-metric-val">${b.rev}</div></div>
-        <div class="bc-metric"><div class="bc-metric-lbl">Proj. Month-End</div><div class="bc-metric-val">${b.proj}</div></div>
-      </div>
-      <div class="bc-traj"><span class="${tj}">${b.traj}</span> <span class="${wwc}" style="margin-left:6px;font-family:var(--mono);font-size:9px">${b.ww} vs LM</span></div>
-    </div>`;
-  }).join('');
+    const hLabel=b.h==='red'?'Red':b.h==='yellow'?'Yellow':'Green';
+    const tj=b.traj.startsWith('↑')?'tu':b.traj.startsWith('↓')?'td':'tf';
+    const wwc=b.ww.startsWith('+')?'tu':b.ww.startsWith('-')?'td':'tf';
+    const sr=showRate[b.id]||'—';
+    const srb=parseInt(sr)>=75?'bg':parseInt(sr)>=55?'by':parseInt(sr)>0?'br':'bn';
+    return `<tr class="${rc}"><td style="font-weight:600">${b.id}</td><td style="font-family:var(--mono)">${b.reps}</td><td><span class="b ${hb}">${hLabel}</span></td><td style="font-family:var(--mono)">${b.sets}</td><td style="font-family:var(--mono);color:var(--text-muted)">${b.sets_pace}</td><td><span class="b ${srb}">${sr}</span></td><td style="font-family:var(--mono)">${b.rev}</td><td style="font-family:var(--mono)">${b.proj}</td><td><span class="${tj}">${b.traj}</span></td><td class="${wwc}">${b.ww} vs LM</td></tr>`;
+  }).join('')+`<tr class="tot"><td>All Brands</td><td>16</td><td></td><td>267</td><td>765</td><td>48.6%</td><td>$429K</td><td>~$1.0M</td><td>—</td><td class="td">↓ -8%</td></tr>`;
 }
 renderBrands();
-
-function filterBrand(id){
-  const fcs=document.querySelectorAll('.fbar .fc');
-  fcs[1].textContent=id+' ▾';
-  fcs[1].classList.add('af');
-}
 
 // ── SECTION TABLES ───────────────────────────────────
 let showAct=false;
@@ -389,7 +377,7 @@ function renderRepTable(){
     const cb=r.conn>=10?'bg':r.conn>=5?'bt':r.conn>=2?'by':'br';
     const sb=r.show==='—'?'br':parseInt(r.show)>=75?'bg':parseInt(r.show)>=55?'by':'br';
     const crb=r.collr>=90?'bg':r.collr>=50?'by':r.collr>0?'br':'bn';
-    return `<tr class="${rc}"><td style="font-weight:600">${r.n}</td><td><span class="b bn">${r.br}</span></td><td><span class="hd ${hd}"></span></td><td><span class="fl ${fc}">${r.fl}</span></td><td style="font-weight:600;color:${pc};font-family:var(--mono)">${r.p}</td><td>${r.d.toLocaleString()}</td><td><span class="b ${cb}">${r.conn}%</span></td><td>${r.c2s}%</td><td>${r.cv2s}%</td><td>${r.sets}</td><td><span class="b ${sb}">${r.show}</span></td><td>${r.s2c}%</td><td>$${(r.gross/1000).toFixed(0)}K</td><td><span class="b ${crb}">${r.collr>0?r.collr+'%':'—'}</span></td></tr>`;
+    return `<tr class="${rc}"><td style="font-weight:600">${r.n}</td><td><span class="b bn">${r.br}</span></td><td><span class="hd ${hd}"></span></td><td><span class="fl ${fc}">${r.fl}</span></td><td style="font-weight:600;color:${pc};font-family:var(--mono)">${r.p}</td><td>${r.d.toLocaleString()}</td><td><span class="b ${cb}">${r.conn}%</span></td><td>${r.c2s}%</td><td>${r.cv2s}%</td><td>${r.sets}</td><td><span class="b ${sb}">${r.show}</span></td><td>${r.s2c}%</td><td>$${(r.gross/1000).toFixed(0)}K</td><td style="font-family:var(--mono)">$${r.coll.toLocaleString()}</td></tr>`;
   }).join('')+`<tr class="tot"><td>Team Total</td><td></td><td></td><td></td><td></td><td>17,405</td><td>5.0%</td><td>30.5%</td><td>37.9%</td><td>267</td><td>48.6%</td><td>17.6%</td><td>$429K</td><td>86%</td></tr>`;
 }
 renderRepTable();
